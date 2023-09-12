@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: andrewc-nginx
+  name: andrewc-nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: andrewc-nginx
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: andrewc-nginx
+    spec:
+      containers:
+      - image: 215453638489.dkr.ecr.eu-west-2.amazonaws.com/nginx:0.0.1
+        name: nginx
+        volumeMounts:
+          - name: andrewc-volume
+            mountPath: /usr/share/nginx/html
+      imagePullSecrets:
+      - name: ecr-cred
+      volumes:
+        - name: andrewc-volume
+          configMap:
+            name: andrewc-configmap
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: andrewc-nginx
+  name: andrewc-nginx
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 30080
+  selector:
+    app: andrewc-nginx
+  type: NodePort
+status:
+  loadBalancer: {}
+
+---
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  creationTimestamp: null
+  labels:
+    app: andrewc-nginx
+  name: andrewc-nginx
+spec:
+  port:
+    targetPort: 80
+  to:
+    kind: ""
+    name: andrewc-nginx
+    weight: null
+status: {}
+
+---
+
+apiVersion: v1
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Hello World</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                background-color: #f4f4f4;
+                margin: 0;
+                padding: 0;
+            }
+
+            header {
+                background-color: #4CAF50;
+                color: white;
+                padding: 1em;
+                text-align: center;
+            }
+
+            main {
+                margin-top: 2em;
+                padding: 1em;
+            }
+
+            footer {
+                background-color: #4CAF50;
+                color: white;
+                text-align: center;
+                padding: 1em;
+                position: absolute;
+                bottom: 0;
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Hello World</h1>
+        </header>
+
+        <main>
+            <p>Check what I can do with Kubernetes</p>
+        </main>
+
+        <footer>
+            <p>Created with 💚</p>
+        </footer>
+    </body>
+    </html>
+kind: ConfigMap
+metadata:
+  name: andrewc-configmap
